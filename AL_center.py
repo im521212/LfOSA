@@ -56,7 +56,7 @@ parser.add_argument('--plot', action='store_true', help="whether to plot feature
 # openset
 parser.add_argument('--is-filter', type=bool, default=True)
 parser.add_argument('--is-mini', type=bool, default=True)
-parser.add_argument('--known-class', type=int, default=20)
+parser.add_argument('--known-class', type=int, default=9)
 parser.add_argument('--init-percent', type=int, default=16)
 
 args = parser.parse_args()
@@ -281,7 +281,7 @@ def plot_features(features, labels, num_classes, epoch, prefix):
         features: (num_instances, num_features).
         labels: (num_instances). 
     """
-    colors = ['C0', 'C1', 'C2', 'C3', 'C4', 'C5', 'C6', 'C7', 'C8', 'C9']
+    colors = ['C0', 'C1', 'C2', 'C3', 'C4', 'C5', 'C6', 'C7', 'C8']
     for label_idx in range(num_classes):
         plt.scatter(
             features[labels==label_idx, 0],
@@ -289,7 +289,7 @@ def plot_features(features, labels, num_classes, epoch, prefix):
             c=colors[label_idx],
             s=1,
         )
-    plt.legend(['0', '1', '2', '3', '4', '5', '6', '7', '8', '9'], loc='upper right')
+    plt.legend(['0', '1', '2', '3', '4', '5', '6', '7', '8'], loc='upper right')
     dirname = osp.join(args.save_dir, prefix)
     if not osp.exists(dirname):
         os.mkdir(dirname)
