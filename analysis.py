@@ -27,7 +27,7 @@ from center_loss import CenterLoss
 
 parser = argparse.ArgumentParser("Center Loss Example")
 # dataset
-parser.add_argument('-d', '--dataset', type=str, default='mnist', choices=['mnist'])
+parser.add_argument('-d', '--dataset', type=str, default='combined_wafer_data', choices=['combined_wafer_data','mnist','cifar10','cifar100'])
 parser.add_argument('-j', '--workers', default=4, type=int,
                     help="number of data loading workers (default: 4)")
 # optimization
@@ -53,12 +53,12 @@ parser.add_argument('--is-filter', type=bool, default=True)
 
 args = parser.parse_args()
 
-def filter_known_unknown(cifar_train):
+def filter_known_unknown(wafer_train):
     filter_ind = []
     filter_ind2 = []
-    for i in range(len(cifar_train.targets)):
-        c = cifar_train.targets[i]
-        if c < 7:
+    for i in range(len(wafer_train.labels)):
+        c = cifar_train.labels[i]
+        if c < 9:
             filter_ind.append(i)
         else:
             filter_ind2.append(i)
@@ -88,7 +88,10 @@ def main():
     cifar_train = datasets.MNIST(root='./data/mnist', train=True, download=True, transform=transform)
     cifar_test = datasets.MNIST(root='./data/mnist', train=False, download=True, transform=transform)
 
-    filter_ind, filter_ind2 = filter_known_unknown(cifar_train)
+    wafer_train = data
+
+  
+    filter_ind, filter_ind2 = filter_known_unknown(wafer_train)
 
     train_loader_known = DataLoader(cifar_train, batch_size=args.batch_size, shuffle=False, sampler=SubsetRandomSampler(filter_ind))
     train_loader_unknown = DataLoader(cifar_train, batch_size=args.batch_size, shuffle=False, sampler=SubsetRandomSampler(filter_ind2))
