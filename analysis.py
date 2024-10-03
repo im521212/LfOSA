@@ -27,7 +27,7 @@ from center_loss import CenterLoss
 
 parser = argparse.ArgumentParser("Center Loss Example")
 # dataset
-parser.add_argument('-d', '--dataset', type=str, default='combined_wafer_data', choices=['combined_wafer_data','mnist','cifar10','cifar100'])
+parser.add_argument('-d', '--dataset', type=str, default='wafer', choices=['wafer','mnist','cifar10','cifar100'])
 parser.add_argument('-j', '--workers', default=4, type=int,
                     help="number of data loading workers (default: 4)")
 # optimization
@@ -81,14 +81,35 @@ def main():
         print("Currently using CPU")
 
     print("Creating dataset: {}".format(args.dataset))
+
+    # Transform 정의
+    transform = transforms.Compose([
+    transforms.ToTensor(),
+    transforms.Normalize((0.1307,), (0.3081,))
+    ])
+
+    # CustomDataset 사용
+    npz_file = 'combined_wafer_data.npz.npz'  # npz 파일 경로
+    dataset = waferdata(npz_file)  # 사용자 정의 데이터셋
+
+    # 데이터 필터링
+    filter_ind, filter_ind2 = filter_known_unknown(dataset)
+
+    # 데이터로더 생성
+    train_loader_known = DataLoader(dataset, batch_size=args.batch_size, shuffle=False, sampler=SubsetRandomSampler(filter_ind))
+    train_loader_unknown = DataLoader(dataset, batch_size=args.batch_size, shuffle=False, sampler=SubsetRandomSampler(filter_ind2))
+
+
+
+
+
+  
     transform = transforms.Compose([
         transforms.ToTensor(),
         transforms.Normalize((0.1307,), (0.3081,))
     ])
     cifar_train = datasets.MNIST(root='./data/mnist', train=True, download=True, transform=transform)
     cifar_test = datasets.MNIST(root='./data/mnist', train=False, download=True, transform=transform)
-
-    wafer_train = data
 
   
     filter_ind, filter_ind2 = filter_known_unknown(wafer_train)
