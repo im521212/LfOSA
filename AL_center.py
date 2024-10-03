@@ -29,7 +29,7 @@ from sklearn.mixture import GaussianMixture
 
 parser = argparse.ArgumentParser("Center Loss Example")
 # dataset
-parser.add_argument('-d', '--dataset', type=str, default='combined_wafer_data', choices=['combined_wafer_data'])
+parser.add_argument('-d', '--dataset', type=str, default='combined_wafer_data', choices=['combined_wafer_data','mnist','cifar10','cifar100'])
 parser.add_argument('-j', '--workers', default=0, type=int,
                     help="number of data loading workers (default: 4)")
 # optimization
