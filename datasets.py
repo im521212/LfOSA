@@ -9,6 +9,90 @@ import transforms
 known_class = -1
 init_percent = -1
 
+class waferdata(object):
+    def __init__(self, npz_file):
+        self.data = np.load('combined_wafer_data.npz',allow_pickle=True)
+        self.images = self.data['image']  # dtype('O')
+        self.labels = self.data['label']  # int32
+        self.mean = self.images.mean
+        self.std = self.images.std
+        
+        # 텐서로 변환
+        self.images = torch.stack([torch.tensor(np.array(img, dtype=np.uint8)) for img in self.images])
+
+    def __len__(self):
+        return len(self.images)
+
+    def __getitem__(self, idx):
+        return self.images[idx], self.labels[idx]
+
+class wafer(object):
+    def __init__(self, batch_size, use_gpu, num_workers, is_filter, is_mini, unlabeled_ind_train=None, labeled_ind_train=None, npz_file=None):
+        transform = transforms.Compose([
+            transforms.ToTensor(),
+            transforms.Normalize((mean,), (std,))
+        ])
+
+        pin_memory = True if use_gpu else False
+
+        # Custom dataset 로드
+        data = wafer('combined_wafer_data.npz')
+
+        # 초기화
+        if unlabeled_ind_train is None and labeled_ind_train is None:
+            if is_mini:
+                labeled_ind_train, unlabeled_ind_train = self.filter_known_unknown_10percent(data)
+                self.labeled_ind_train, self.unlabeled_ind_train = labeled_ind_train, unlabeled_ind_train
+            else:
+                labeled_ind_train = self.filter_known_unknown(data)
+                self.labeled_ind_train = labeled_ind_train
+        else:
+            self.labeled_ind_train, self.unlabeled_ind_train = labeled_ind_train, unlabeled_ind_train
+
+        if is_filter:
+            print("Open set here!")
+            trainloader = DataLoader(
+                dataset, batch_size=batch_size, shuffle=False,
+                num_workers=num_workers, pin_memory=pin_memory,
+                sampler=SubsetRandomSampler(self.labeled_ind_train),
+            )
+            unlabeledloader = DataLoader(
+                dataset, batch_size=batch_size, shuffle=False,
+                num_workers=num_workers, pin_memory=pin_memory,
+                sampler=SubsetRandomSampler(self.unlabeled_ind_train),
+            )
+        else:
+            trainloader = DataLoader(
+                dataset, batch_size=batch_size, shuffle=True,
+                num_workers=num_workers, pin_memory=pin_memory,
+            )
+        
+        self.trainloader = trainloader
+        if is_filter: self.unlabeledloader = unlabeledloader
+
+    def filter_known_unknown(self, dataset):
+        filter_ind = []
+        for i in range(len(dataset)):
+            c = dataset.labels[i]
+            if c < known_class:
+                filter_ind.append(i)
+        return filter_ind
+
+    def filter_known_unknown_10percent(self, dataset):
+        filter_ind = []
+        unlabeled_ind = []
+        for i in range(len(dataset)):
+            c = dataset.labels[i]
+            if c < known_class:
+                filter_ind.append(i)
+            else:
+                unlabeled_ind.append(i)
+
+        random.shuffle(filter_ind)
+        labeled_ind = filter_ind[:len(filter_ind) * init_percent // 1000]
+        unlabeled_ind = unlabeled_ind + filter_ind[len(filter_ind) * init_percent // 1000:]
+        return labeled_ind, unlabeled_ind
+
 class MNIST(object):
     def __init__(self, batch_size, use_gpu, num_workers, is_filter, is_mini, unlabeled_ind_train=None, labeled_ind_train=None):
         transform = transforms.Compose([
@@ -282,6 +366,7 @@ class CIFAR10(object):
         return labeled_ind, unlabeled_ind
 
 __factory = {
+    'wafer' : wafer,
     'mnist': MNIST,
     'cifar100': CIFAR100,
     'cifar10': CIFAR10,
